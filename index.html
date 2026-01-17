@@ -3,112 +3,162 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FinaFlow - Smart Finance</title>
+  <title>FinaFlow - Rencana & Realisasi</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
   <section id="auth-section">
     <div class="auth-card">
-        <h2>FinaFlow 🚀</h2>
-        <p>Login untuk akses data keuanganmu.</p>
+        <h2 style="color:#003366">FinaFlow 💎</h2>
+        <p>Login untuk melanjutkan</p>
         <div class="form-group">
-            <input type="email" id="email" placeholder="Email Address" />
+            <input type="email" id="email" placeholder="Email" />
             <input type="password" id="password" placeholder="Password" />
         </div>
-        <div class="auth-buttons">
-            <button onclick="login()">Masuk</button>
-            <button class="secondary" onclick="register()">Daftar</button>
-        </div>
-        <p id="auth-msg" class="error-msg"></p>
+        <button onclick="login()">Masuk</button>
+        <button class="secondary" onclick="register()">Daftar</button>
+        <p id="auth-msg"></p>
     </div>
   </section>
 
   <section id="app-section" class="hidden">
-    <header>
-      <div>
-        <h1>Dashboard Keuangan</h1>
-        <small id="user-display">user@email.com</small>
-      </div>
-      <button class="danger" onclick="logout()">Keluar</button>
-    </header>
+    
+    <nav class="navbar no-print">
+        <div class="menu-toggle" onclick="toggleMenu()">☰</div>
+        <div class="logo">FinaFlow</div>
+    </nav>
 
-    <div class="cards">
-      <div class="card">
-        <h4>Sisa Saldo</h4>
-        <p id="saldo" class="big-num">Rp 0</p>
-      </div>
-      <div class="card income">
-        <h4>Pemasukan</h4>
-        <p id="total-income" class="big-num green">Rp 0</p>
-      </div>
-      <div class="card expense">
-        <h4>Pengeluaran</h4>
-        <p id="total-expense" class="big-num red">Rp 0</p>
-      </div>
+    <div id="sidebar" class="sidebar">
+        <button onclick="closeMenu()" class="close-btn">&times;</button>
+        <div class="user-profile">
+            <div class="avatar">👤</div>
+            <small id="user-display">User</small>
+        </div>
+        <hr>
+        <button onclick="switchTab('dashboard')" class="nav-item">📊 Dashboard Utama</button>
+        <button onclick="switchTab('planning')" class="nav-item">📝 Rencana Pengeluaran</button>
+        <button onclick="switchTab('settings')" class="nav-item">⚙️ Info & Pengaturan</button>
+        <button onclick="logout()" class="nav-item danger">Keluar Aplikasi</button>
     </div>
+    <div id="overlay" onclick="closeMenu()"></div>
 
-    <div class="grid-layout">
-        <div class="chart-card">
-            <h4>Analisis Pengeluaran</h4>
-            <div class="chart-wrapper">
-                <canvas id="expenseChart"></canvas>
-            </div>
-            <div id="empty-chart-msg" class="hidden" style="text-align:center; color:#888; margin-top:20px;">
-                Belum ada data pengeluaran.
-            </div>
-        </div>
-
-        <div class="form-card">
-            <h3>Catat Transaksi</h3>
+    <div class="container">
+        
+        <div id="view-dashboard" class="tab-content">
             
-            <label>Jenis Transaksi</label>
-            <div class="type-toggle">
-                <button id="btn-inc" class="toggle active" onclick="setFormType('income')">Pemasukan</button>
-                <button id="btn-exp" class="toggle" onclick="setFormType('expense')">Pengeluaran</button>
+            <div id="export-area" class="paper">
+                <header class="report-header">
+                    <h2>Laporan Keuangan</h2>
+                    <p id="current-date" style="color:#666; font-size:0.9rem;">Per hari ini</p>
+                </header>
+
+                <div class="cards">
+                    <div class="card balance">
+                        <small>Sisa Saldo</small>
+                        <p id="saldo" class="big-num">Rp 0</p>
+                    </div>
+                    <div class="card income">
+                        <small>Pemasukan</small>
+                        <p id="total-income" class="big-num green">Rp 0</p>
+                    </div>
+                    <div class="card expense">
+                        <small>Pengeluaran</small>
+                        <p id="total-expense" class="big-num red">Rp 0</p>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <h4>Analisis Pengeluaran</h4>
+                    <div style="height:250px; position:relative;">
+                        <canvas id="expenseChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="print-only-table">
+                     <h4>Rincian Transaksi Terakhir</h4>
+                     <table id="print-table" style="width:100%; border:1px solid #ddd; margin-top:10px;">
+                        </table>
+                </div>
             </div>
-            <input type="hidden" id="type" value="income">
+            <div class="action-bar no-print">
+                <button onclick="exportJPG()" class="btn-export jpg">📸 Simpan JPG</button>
+                <button onclick="window.print()" class="btn-export pdf">📄 Cetak PDF</button>
+            </div>
 
-            <label>Kategori</label>
-            <select id="category">
-                </select>
+            <div class="form-card mt-20 no-print">
+                <h3>➕ Catat Transaksi Baru</h3>
+                <div class="row">
+                    <select id="type" onchange="updateCategories()">
+                        <option value="expense">Pengeluaran (-)</option>
+                        <option value="income">Pemasukan (+)</option>
+                    </select>
+                    <input type="date" id="date" />
+                </div>
+                <input type="number" id="amount" placeholder="Nominal (Rp)" />
+                <select id="category"></select>
+                <input type="text" id="desc" placeholder="Catatan" />
+                <button onclick="addTransaction()">Simpan Transaksi</button>
+            </div>
 
-            <label>Detail</label>
-            <input type="text" id="desc" placeholder="Catatan (cth: Nasi Padang)" />
+            <div class="data-section mt-20 no-print">
+                <div class="filter-box">
+                    <label>Filter:</label>
+                    <input type="date" id="filter-start"> <span>s/d</span> <input type="date" id="filter-end">
+                    <button onclick="loadTransactions('custom')" style="width:auto; padding:5px 15px;">Cari</button>
+                </div>
+                <table id="transaction-table">
+                    <thead>
+                        <tr>
+                            <th>Tgl</th>
+                            <th>Ket</th>
+                            <th>Rp</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="view-planning" class="tab-content hidden">
+            <div class="form-card">
+                <h3>📝 Daftar Rencana Pengeluaran</h3>
+                <p style="color:#666; font-size:0.9rem;">Catat dulu kebutuhanmu agar tidak lupa. Centang jika sudah terealisasi.</p>
+                <div class="row">
+                    <input type="text" id="plan-item" placeholder="Nama Barang/Kebutuhan" />
+                    <input type="number" id="plan-amount" placeholder="Estimasi Harga" style="width:120px" />
+                </div>
+                <button onclick="addPlan()" class="secondary">Tambahkan ke Daftar</button>
+            </div>
+
+            <div id="planning-list" class="planning-container">
+                </div>
+        </div>
+
+        <div id="view-settings" class="tab-content hidden">
+            <div class="card">
+                <h3>ℹ️ Tentang Aplikasi</h3>
+                <p>Aplikasi ini dirancang untuk mencatat arus kas dan merencanakan pengeluaran masa depan.</p>
+                <hr>
+                <h4>📞 Contact Us</h4>
+                <p>Email: admin@finaflow.app</p>
+                <p>WhatsApp: +62 812-3456-7890</p>
+            </div>
             
-            <label>Nominal (Rp)</label>
-            <input type="number" id="amount" placeholder="0" />
-            
-            <label>Tanggal</label>
-            <input type="date" id="date" />
+            <div class="card mt-20" style="border-left: 4px solid red;">
+                <h4>Zona Reset</h4>
+                <button onclick="autoCleanData()" class="secondary">Bersihkan Data (> 30 Hari)</button>
+                <button onclick="deleteAllData()" class="danger mt-10">Hapus SEMUA Data</button>
+            </div>
+        </div>
 
-            <button onclick="addTransaction()" class="save-btn">Simpan Data</button>
-        </div>
-    </div>
-
-    <div class="data-section">
-        <div class="filter-bar">
-            <button onclick="loadTransactions('month')">Bulan Ini</button>
-            <button onclick="loadTransactions('all')">Semua Data</button>
-            <button onclick="window.print()" class="secondary">🖨️ Cetak</button>
-        </div>
-        <div class="table-responsive">
-            <table id="transaction-table">
-                <thead>
-                    <tr>
-                        <th>Tanggal</th>
-                        <th>Kategori</th>
-                        <th>Catatan</th>
-                        <th>Nominal</th>
-                        <th class="no-print">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </div>
     </div>
   </section>
 

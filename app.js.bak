@@ -1,241 +1,244 @@
-// ================= CONFIGURASI =================
-// GANTI DENGAN URL & KEY SUPABASE MILIKMU SENDIRI
-const SUPABASE_URL = "https://sbxtfqidotarniglzban.supabase.co";
+// CONFIG
+const SUPABASE_URL = "https://sbxtfqidotarniglzban.supabase.co"; 
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNieHRmcWlkb3Rhcm5pZ2x6YmFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMjgxODQsImV4cCI6MjA4MzgwNDE4NH0.MCiWNCcmQRBmAvAbsbcpdMbSOWAg7zPqJynpCLf1RKQ";
-
-// Inisialisasi Client
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// State Global
 let currentUser = null;
-let financeChart = null;
+let expenseChart = null;
+let categories = {
+    income: ["Gaji", "Bonus", "Bisnis", "Lainnya"],
+    expense: ["Makan", "Transport", "Tagihan", "Belanja", "Hiburan", "Kesehatan", "Lainnya"]
+};
 
-// ================= EVENT LISTENER (Saat Halaman Dimuat) =================
+// --- INIT ---
 window.addEventListener('DOMContentLoaded', async () => {
-    // Cek apakah user sudah login sebelumnya
-    const { data: { session } } = await sb.auth.getSession();
+    document.getElementById("date").valueAsDate = new Date();
+    updateCategories(); // Init dropdown
     
+    // Set default filter date (Awal bulan - Hari ini)
+    const today = new Date();
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    document.getElementById('filter-start').valueAsDate = firstDay;
+    document.getElementById('filter-end').valueAsDate = today;
+
+    const { data: { session } } = await sb.auth.getSession();
     if (session) {
         currentUser = session.user;
         initApp();
     }
 });
 
-// ================= AUTHENTICATION =================
-async function register() {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
-    const msg = document.getElementById("auth-message");
-
-    if(!email || !password) return alert("Isi email dan password!");
-
-    const { error } = await sb.auth.signUp({ email, password });
-
-    if (error) {
-        msg.style.display = "block";
-        msg.innerText = "Error: " + error.message;
-    } else {
-        alert("Pendaftaran berhasil! Cek email untuk konfirmasi atau coba login.");
-    }
+// --- NAVIGATION ---
+function switchTab(tabName) {
+    // Hide all contents
+    ['dashboard', 'shopping', 'settings'].forEach(t => {
+        document.getElementById(`view-${t}`).classList.add('hidden');
+    });
+    // Show selected
+    document.getElementById(`view-${tabName}`).classList.remove('hidden');
+    
+    // Update button active state
+    const buttons = document.querySelectorAll('.nav-btn');
+    buttons.forEach(btn => btn.classList.remove('active'));
+    // (Simplifikasi: anggap user klik button yg sesuai, di real app bisa pake ID button)
 }
 
-async function login() {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
-    const msg = document.getElementById("auth-message");
-
-    const { data, error } = await sb.auth.signInWithPassword({ email, password });
-
-    if (error) {
-        msg.style.display = "block";
-        msg.innerText = "Gagal Masuk: " + error.message;
-    } else {
-        currentUser = data.user;
-        initApp();
-    }
-}
-
-async function logout() {
-    await sb.auth.signOut();
-    location.reload();
-}
-
-// ================= INITIALIZATION =================
 function initApp() {
     document.getElementById("auth-section").classList.add("hidden");
     document.getElementById("app-section").classList.remove("hidden");
-    document.getElementById("user-email-display").innerText = currentUser.email;
-
-    // Set tanggal default ke hari ini
-    document.getElementById("date").valueAsDate = new Date();
-
-    loadTransactions("month"); // Default load data bulan ini
+    document.getElementById("user-display").innerText = currentUser.email;
+    loadTransactions('month');
+    loadShoppingList();
 }
 
-// ================= CRUD (DATABASE) =================
+// --- AUTH (Sama seperti sebelumnya) ---
+async function login() {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    if(error) alert(error.message);
+    else { currentUser = data.user; initApp(); }
+}
+async function register() {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+    const { error } = await sb.auth.signUp({ email, password });
+    if(error) alert(error.message); else alert("Cek email!");
+}
+async function logout() { await sb.auth.signOut(); location.reload(); }
+
+// --- DASHBOARD LOGIC ---
+function updateCategories() {
+    const type = document.getElementById("type").value;
+    const select = document.getElementById("category");
+    select.innerHTML = "";
+    categories[type].forEach(c => {
+        select.innerHTML += `<option value="${c}">${c}</option>`;
+    });
+}
+
 async function addTransaction() {
-    const desc = document.getElementById("desc").value;
+    const type = document.getElementById("type").value;
+    const category = document.getElementById("category").value;
     const amount = Number(document.getElementById("amount").value);
     const date = document.getElementById("date").value;
-    const type = document.getElementById("type").value;
+    const desc = document.getElementById("desc").value || "-";
 
-    if(!desc || !amount || !date) return alert("Mohon lengkapi semua data!");
+    if(!amount) return alert("Isi nominal!");
 
-    const { error } = await sb.from("transactions").insert({
-        user_id: currentUser.id,
-        description: desc, // Pastikan kolom di supabase namanya 'description'
-        amount: amount,
-        date: date,
-        type: type
+    await sb.from("transactions").insert({
+        user_id: currentUser.id, type, category, amount, date, description: desc
     });
 
-    if (error) alert("Gagal simpan: " + error.message);
-    else {
-        // Reset form input
-        document.getElementById("desc").value = "";
-        document.getElementById("amount").value = "";
-        loadTransactions("month"); // Refresh data
-    }
+    document.getElementById("amount").value = "";
+    document.getElementById("desc").value = "";
+    loadTransactions('custom'); // Reload sesuai filter yg aktif
 }
 
-async function deleteTransaction(id) {
-    if(!confirm("Yakin hapus data ini?")) return;
-    
-    const { error } = await sb.from("transactions").delete().eq("id", id);
-    
-    if(error) alert("Gagal hapus: " + error.message);
-    else loadTransactions("month");
-}
+async function loadTransactions(mode) {
+    let query = sb.from("transactions").select("*").eq("user_id", currentUser.id).order("date", {ascending: false});
 
-// ================= LOAD & FILTER DATA =================
-async function loadTransactions(filterType) {
-    // Logika Filter Tanggal
-    const startDate = new Date();
-    if (filterType === 'day') startDate.setDate(startDate.getDate() - 1);
-    else if (filterType === 'week') startDate.setDate(startDate.getDate() - 7);
-    else if (filterType === 'month') startDate.setMonth(startDate.getMonth() - 1);
-    else if (filterType === 'all') startDate.setFullYear(2000); // Ambil semua data
-
-    let query = sb
-        .from("transactions")
-        .select("*")
-        .eq("user_id", currentUser.id)
-        .order("date", { ascending: false });
-
-    // Terapkan filter jika bukan 'all'
-    if (filterType !== 'all') {
-        query = query.gte("date", startDate.toISOString().split("T")[0]);
+    // LOGIKA FILTER TANGGAL
+    if(mode === 'month') {
+        const d = new Date();
+        const firstDay = new Date(d.getFullYear(), d.getMonth(), 1).toISOString();
+        query = query.gte("date", firstDay);
+    } else if (mode === 'custom') {
+        const start = document.getElementById("filter-start").value;
+        const end = document.getElementById("filter-end").value;
+        if(start) query = query.gte("date", start);
+        if(end) query = query.lte("date", end);
     }
 
-    const { data, error } = await query;
-
-    if(error) console.error("Error load data:", error);
-    else {
-        renderTable(data);
-        renderSummary(data);
-        renderChart(data);
-        renderAdvice(data);
-    }
+    const { data } = await query;
+    renderDashboard(data);
 }
 
-// ================= RENDER UI =================
-function renderTable(data) {
+function renderDashboard(data) {
+    // 1. Render Table
     const tbody = document.querySelector("#transaction-table tbody");
     tbody.innerHTML = "";
-
-    if(data.length === 0) {
-        tbody.innerHTML = "<tr><td colspan='5' style='text-align:center'>Belum ada data.</td></tr>";
-        return;
-    }
+    let inc = 0, exp = 0;
+    let catData = {};
 
     data.forEach(t => {
-        const row = `
+        if(t.type === 'income') inc += t.amount;
+        else {
+            exp += t.amount;
+            catData[t.category] = (catData[t.category] || 0) + t.amount;
+        }
+
+        tbody.innerHTML += `
             <tr>
-                <td>${t.date}</td>
-                <td>${t.description}</td> 
-                <td style="color:${t.type === 'income' ? 'green' : 'red'}">${t.type.toUpperCase()}</td>
-                <td>Rp ${t.amount.toLocaleString()}</td>
-                <td class="no-print">
-                    <button class="danger" style="padding:5px 10px;" onclick="deleteTransaction(${t.id})">Hapus</button>
+                <td>${t.date.slice(5)}</td>
+                <td>${t.category}<br><small>${t.description}</small></td>
+                <td class="${t.type === 'income' ? 'green' : 'red'}">
+                    ${t.amount.toLocaleString()}
                 </td>
+                <td><button class="danger small" onclick="delTrans(${t.id})">X</button></td>
             </tr>
         `;
-        tbody.innerHTML += row;
-    });
-}
-
-function renderSummary(data) {
-    let income = 0;
-    let expense = 0;
-
-    data.forEach(t => {
-        if (t.type === "income") income += t.amount;
-        else expense += t.amount;
     });
 
-    document.getElementById("saldo").innerText = `Rp ${(income - expense).toLocaleString()}`;
-    document.getElementById("total-income").innerText = `Rp ${income.toLocaleString()}`;
-    document.getElementById("total-expense").innerText = `Rp ${expense.toLocaleString()}`;
-}
+    // 2. Render Cards
+    document.getElementById("saldo").innerText = "Rp " + (inc - exp).toLocaleString();
+    document.getElementById("total-income").innerText = "Rp " + inc.toLocaleString();
+    document.getElementById("total-expense").innerText = "Rp " + exp.toLocaleString();
 
-function renderChart(data) {
-    let income = 0;
-    let expense = 0;
-
-    data.forEach(t => {
-        if (t.type === "income") income += t.amount;
-        else expense += t.amount;
-    });
-
-    // Hapus chart lama jika ada agar tidak menumpuk (bug chart.js umum)
-    if (financeChart) financeChart.destroy();
-
-    const ctx = document.getElementById("financeChart").getContext('2d');
-    financeChart = new Chart(ctx, {
-        type: "doughnut",
+    // 3. Render Chart
+    const ctx = document.getElementById("expenseChart").getContext('2d');
+    if(expenseChart) expenseChart.destroy();
+    expenseChart = new Chart(ctx, {
+        type: 'doughnut',
         data: {
-            labels: ["Pemasukan", "Pengeluaran"],
+            labels: Object.keys(catData),
             datasets: [{
-                data: [income, expense],
-                backgroundColor: ["#22c55e", "#ef4444"],
-                borderWidth: 0
+                data: Object.values(catData),
+                backgroundColor: ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6']
             }]
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false
-        }
+        options: { responsive: true, maintainAspectRatio: false }
     });
 }
 
-function renderAdvice(data) {
-    let income = 0;
-    let expense = 0;
-
-    data.forEach(t => {
-        if (t.type === "income") income += t.amount;
-        else expense += t.amount;
-    });
-
-    const card = document.getElementById("advice-card");
-    card.className = "advice"; // Reset class
-
-    if (income === 0 && expense === 0) {
-        card.style.display = "none";
-        return;
+async function delTrans(id) {
+    if(confirm("Hapus?")) {
+        await sb.from("transactions").delete().eq("id", id);
+        loadTransactions('custom');
     }
+}
 
-    card.style.display = "block";
+// --- SHOPPING LIST LOGIC ---
+async function loadShoppingList() {
+    const { data } = await sb.from("shopping_list").select("*").eq("user_id", currentUser.id).order("created_at", {ascending: false});
+    const container = document.getElementById("shopping-list");
+    container.innerHTML = "";
 
-    if (expense > income * 0.8) {
-        card.classList.add("red");
-        card.innerHTML = "⚠️ <b>PERINGATAN:</b> Pengeluaranmu boros (>80% Pemasukan). Segera berhemat!";
-    } else if (expense < income * 0.5 && income > 0) {
-        card.classList.add("green");
-        card.innerHTML = "✅ <b>BAGUS:</b> Keuanganmu sangat sehat. Terus menabung!";
-    } else {
-        card.style.background = "#e2e8f0";
-        card.style.color = "#334155";
-        card.innerHTML = "ℹ️ <b>INFO:</b> Keuanganmu stabil, tapi tetap hati-hati.";
+    if(data.length === 0) container.innerHTML = "<p style='text-align:center; color:#999'>Belum ada rencana belanja.</p>";
+
+    data.forEach(item => {
+        container.innerHTML += `
+            <div class="shopping-item ${item.is_bought ? 'bought' : ''}">
+                <div style="display:flex; align-items:center">
+                    <input type="checkbox" class="check-btn" 
+                        ${item.is_bought ? 'checked' : ''} 
+                        onchange="toggleShopItem(${item.id}, this.checked)">
+                    <span>${item.item_name}</span>
+                </div>
+                <button class="danger small" style="width:auto" onclick="delShopItem(${item.id})">Hapus</button>
+            </div>
+        `;
+    });
+}
+
+async function addShoppingItem() {
+    const item = document.getElementById("shop-item").value;
+    if(!item) return;
+    await sb.from("shopping_list").insert({ user_id: currentUser.id, item_name: item });
+    document.getElementById("shop-item").value = "";
+    loadShoppingList();
+}
+
+async function toggleShopItem(id, status) {
+    await sb.from("shopping_list").update({ is_bought: status }).eq("id", id);
+    loadShoppingList(); // Refresh style
+}
+
+async function delShopItem(id) {
+    if(confirm("Hapus dari daftar belanja?")) {
+        await sb.from("shopping_list").delete().eq("id", id);
+        loadShoppingList();
+    }
+}
+
+// --- EXPORT TO PICT ---
+function exportToImage() {
+    const area = document.getElementById("capture-area");
+    html2canvas(area).then(canvas => {
+        const link = document.createElement('a');
+        link.download = 'Laporan-Keuangan.jpg';
+        link.href = canvas.toDataURL();
+        link.click();
+    });
+}
+
+// --- DATA MANAGEMENT ---
+async function deleteAllData() {
+    const code = prompt("Ketik 'RESET' untuk menghapus SEMUA data transaksi & belanja.");
+    if(code === 'RESET') {
+        await sb.from("transactions").delete().neq("id", 0);
+        await sb.from("shopping_list").delete().neq("id", 0);
+        alert("Semua data telah dihapus.");
+        location.reload();
+    }
+}
+
+async function autoCleanData() {
+    if(confirm("Hapus data yang lebih lama dari 90 hari?")) {
+        const d = new Date();
+        d.setDate(d.getDate() - 90);
+        await sb.from("transactions").delete().lt("date", d.toISOString());
+        alert("Data lama berhasil dibersihkan.");
+        loadTransactions('month');
     }
 }

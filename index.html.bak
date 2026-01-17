@@ -3,110 +3,166 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Personal Finance Tracker</title>
-
+  <title>FinaFlow v3.0</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-
+  
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-
-  <link rel="stylesheet" href="style.css" />
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script> <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
   <section id="auth-section">
-    <h2 style="text-align:center; color:#0f172a;">Personal Finance Tracker</h2>
-    <p style="text-align:center; margin-bottom:20px; color:#64748b;">Kelola keuanganmu dengan mudah</p>
-
-    <div class="form-group">
-        <input type="email" id="email" placeholder="Email Address" required />
-        <input type="password" id="password" placeholder="Password" required />
-    </div>
-    
-    <p id="auth-message" style="color:red; font-size:0.9rem; text-align:center; display:none;"></p>
-
-    <div class="auth-buttons">
-      <button onclick="login()">Masuk</button>
-      <button class="secondary" onclick="register()">Daftar Baru</button>
+    <div class="auth-card">
+        <h2>FinaFlow 💎</h2>
+        <p>Kelola uang & rencana belanjamu.</p>
+        <div class="form-group">
+            <input type="email" id="email" placeholder="Email" />
+            <input type="password" id="password" placeholder="Password" />
+        </div>
+        <button onclick="login()">Masuk</button>
+        <button class="secondary" onclick="register()">Daftar</button>
+        <p id="auth-msg" class="error-msg"></p>
     </div>
   </section>
 
   <section id="app-section" class="hidden">
+    
+    <nav class="navbar">
+        <div class="logo">FinaFlow</div>
+        <div class="nav-links">
+            <button onclick="switchTab('dashboard')" class="nav-btn active">📊 Dashboard</button>
+            <button onclick="switchTab('shopping')" class="nav-btn">🛒 Belanja</button>
+            <button onclick="switchTab('settings')" class="nav-btn">⚙️ Info & Opsi</button>
+            <button onclick="logout()" class="nav-btn danger">Keluar</button>
+        </div>
+    </nav>
 
-    <header>
-      <div>
-        <h1 style="font-size: 1.5rem;">Dashboard Keuangan</h1>
-        <small id="user-email-display" style="color:#64748b;"></small>
-      </div>
-      <button class="danger" onclick="logout()">Logout</button>
-    </header>
+    <div class="container">
+        
+        <div id="view-dashboard" class="tab-content">
+            <div id="capture-area">
+                <header>
+                    <h3>Ringkasan Keuangan</h3>
+                    <small id="user-display">User</small>
+                </header>
 
-    <div class="cards">
-      <div class="card">
-        <h4>Saldo Saat Ini</h4>
-        <p id="saldo" style="font-size: 1.5rem; font-weight:bold; color:#0f172a;">Rp 0</p>
-      </div>
-      <div class="card income">
-        <h4>Pemasukan</h4>
-        <p id="total-income" style="font-size: 1.2rem; font-weight:bold; color:#16a34a;">Rp 0</p>
-      </div>
-      <div class="card expense">
-        <h4>Pengeluaran</h4>
-        <p id="total-expense" style="font-size: 1.2rem; font-weight:bold; color:#dc2626;">Rp 0</p>
-      </div>
-    </div>
+                <div class="cards">
+                    <div class="card">
+                        <small>Sisa Saldo</small>
+                        <p id="saldo" class="big-num">Rp 0</p>
+                    </div>
+                    <div class="card income">
+                        <small>Pemasukan</small>
+                        <p id="total-income" class="big-num green">Rp 0</p>
+                    </div>
+                    <div class="card expense">
+                        <small>Pengeluaran</small>
+                        <p id="total-expense" class="big-num red">Rp 0</p>
+                    </div>
+                </div>
 
-    <div class="grid-layout">
-        <div class="chart-card">
-            <h4 style="margin-bottom:15px;">Proporsi Keuangan</h4>
-            <div style="height:250px; display:flex; justify-content:center;">
-                <canvas id="financeChart"></canvas>
+                <div class="chart-card">
+                    <div class="chart-wrapper">
+                        <canvas id="expenseChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-bar">
+                <button onclick="exportToImage()" class="secondary">📸 Simpan Gambar</button>
+            </div>
+
+            <div class="form-card mt-20">
+                <h3>Catat Transaksi</h3>
+                <div class="row">
+                    <select id="type" onchange="updateCategories()">
+                        <option value="expense">Pengeluaran (-)</option>
+                        <option value="income">Pemasukan (+)</option>
+                    </select>
+                    <input type="date" id="date" />
+                </div>
+                <input type="number" id="amount" placeholder="Nominal (Rp)" />
+                <select id="category"></select>
+                <input type="text" id="desc" placeholder="Catatan" />
+                <button onclick="addTransaction()">Simpan</button>
+            </div>
+
+            <div class="data-section mt-20">
+                <div class="filter-box">
+                    <label>Filter Tanggal:</label>
+                    <div class="row">
+                        <input type="date" id="filter-start">
+                        <span style="align-self:center">-</span>
+                        <input type="date" id="filter-end">
+                        <button onclick="loadTransactions('custom')" style="width:auto">Cari</button>
+                    </div>
+                    <div class="quick-filter">
+                        <button class="small" onclick="loadTransactions('month')">Bulan Ini</button>
+                        <button class="small" onclick="loadTransactions('all')">Semua</button>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table id="transaction-table">
+                        <thead>
+                            <tr>
+                                <th>Tgl</th>
+                                <th>Ket</th>
+                                <th>Rp</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
-        <div class="form-card">
-            <h3>Tambah Transaksi</h3>
-            <input type="text" id="desc" placeholder="Keterangan (cth: Gaji, Makan)" />
-            <input type="number" id="amount" placeholder="Nominal (Rp)" />
-            <input type="date" id="date" />
-            
-            <select id="type">
-                <option value="income">Pemasukan (+)</option>
-                <option value="expense">Pengeluaran (-)</option>
-            </select>
+        <div id="view-shopping" class="tab-content hidden">
+            <div class="form-card">
+                <h3>🛒 Daftar Rencana Belanja</h3>
+                <p style="font-size:0.9rem; color:#666">Catat dulu, beli kemudian. Centang jika sudah dibeli.</p>
+                <div class="row">
+                    <input type="text" id="shop-item" placeholder="Mau beli apa?" />
+                    <button onclick="addShoppingItem()" style="width:auto">Tambah</button>
+                </div>
+            </div>
 
-            <button onclick="addTransaction()" style="width:100%; margin-top:10px;">Simpan Transaksi</button>
+            <div class="shopping-list-container" id="shopping-list">
+                </div>
         </div>
+
+        <div id="view-settings" class="tab-content hidden">
+            <div class="card">
+                <h3>ℹ️ Tentang Aplikasi</h3>
+                <p><b>FinaFlow v3.0</b> dibuat untuk membantu Jatmiko mengelola keuangan pribadi dengan lebih bijak.</p>
+                <p><b>Fitur Utama:</b> Pencatatan Harian, Grafik Analisis, Daftar Belanja, dan Export Laporan.</p>
+                <hr>
+                <h4>📞 Contact Us</h4>
+                <p>Email: support@jatmiko.app</p>
+                <p>WA: 0812-XXXX-XXXX</p>
+            </div>
+
+            <div class="card mt-20" style="border:1px solid red">
+                <h3 style="color:red">⚠️ Zona Bahaya</h3>
+                <p>Hati-hati, aksi di bawah ini tidak bisa dibatalkan.</p>
+                
+                <button onclick="autoCleanData()" class="secondary" style="margin-bottom:10px">
+                    🧹 Bersihkan Data Lama (> 90 Hari)
+                </button>
+                
+                <button onclick="deleteAllData()" class="danger">
+                    🗑️ Hapus SEMUA Data (Reset Total)
+                </button>
+            </div>
+        </div>
+
     </div>
 
-    <div id="advice-card" class="advice" style="display:none;"></div>
-
-    <div style="margin-top:30px;">
-        <div class="filter-bar">
-            <button onclick="loadTransactions('day')">Harian</button>
-            <button onclick="loadTransactions('week')">Mingguan</button>
-            <button onclick="loadTransactions('month')">Bulanan</button>
-            <button onclick="loadTransactions('all')">Semua</button>
-            <button onclick="window.print()" class="secondary">🖨️ Cetak</button>
-        </div>
-
-        <div class="table-responsive">
-            <table id="transaction-table">
-                <thead>
-                    <tr>
-                        <th>Tanggal</th>
-                        <th>Keterangan</th>
-                        <th>Tipe</th>
-                        <th>Nominal</th>
-                        <th class="no-print">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    </tbody>
-            </table>
-        </div>
-    </div>
+    <footer>
+        <p>&copy; 2026 FinaFlow by Jatmiko. All rights reserved.</p>
+    </footer>
 
   </section>
 
