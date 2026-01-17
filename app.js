@@ -4,7 +4,7 @@ const SUPABASE_URL = "https://sbxtfqidotarniglzban.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNieHRmcWlkb3Rhcm5pZ2x6YmFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMjgxODQsImV4cCI6MjA4MzgwNDE4NH0.MCiWNCcmQRBmAvAbsbcpdMbSOWAg7zPqJynpCLf1RKQ";
 
 // Inisialisasi Client
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // State Global
 let currentUser = null;
@@ -13,7 +13,7 @@ let financeChart = null;
 // ================= EVENT LISTENER (Saat Halaman Dimuat) =================
 window.addEventListener('DOMContentLoaded', async () => {
     // Cek apakah user sudah login sebelumnya
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await sb.auth.getSession();
     
     if (session) {
         currentUser = session.user;
@@ -29,7 +29,7 @@ async function register() {
 
     if(!email || !password) return alert("Isi email dan password!");
 
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { error } = await sb.auth.signUp({ email, password });
 
     if (error) {
         msg.style.display = "block";
@@ -44,7 +44,7 @@ async function login() {
     const password = document.getElementById("password").value;
     const msg = document.getElementById("auth-message");
 
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
 
     if (error) {
         msg.style.display = "block";
@@ -56,7 +56,7 @@ async function login() {
 }
 
 async function logout() {
-    await supabase.auth.signOut();
+    await sb.auth.signOut();
     location.reload();
 }
 
@@ -81,7 +81,7 @@ async function addTransaction() {
 
     if(!desc || !amount || !date) return alert("Mohon lengkapi semua data!");
 
-    const { error } = await supabase.from("transactions").insert({
+    const { error } = await sb.from("transactions").insert({
         user_id: currentUser.id,
         description: desc, // Pastikan kolom di supabase namanya 'description'
         amount: amount,
@@ -101,7 +101,7 @@ async function addTransaction() {
 async function deleteTransaction(id) {
     if(!confirm("Yakin hapus data ini?")) return;
     
-    const { error } = await supabase.from("transactions").delete().eq("id", id);
+    const { error } = await sb.from("transactions").delete().eq("id", id);
     
     if(error) alert("Gagal hapus: " + error.message);
     else loadTransactions("month");
@@ -116,7 +116,7 @@ async function loadTransactions(filterType) {
     else if (filterType === 'month') startDate.setMonth(startDate.getMonth() - 1);
     else if (filterType === 'all') startDate.setFullYear(2000); // Ambil semua data
 
-    let query = supabase
+    let query = sb
         .from("transactions")
         .select("*")
         .eq("user_id", currentUser.id)
