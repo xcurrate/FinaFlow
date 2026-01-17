@@ -1,56 +1,27 @@
-// ================= CONFIG =================
-// HAPUS URL & KEY YANG HARDCODED DI SINI
-// Kita akan mengambilnya secara dinamis saat aplikasi dimuat
+// CONFIG (Ganti URL & KEY Supabase Anda)
+const SUPABASE_URL = "https://sbxtfqidotarniglzban.supabase.co"; 
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNieHRmcWlkb3Rhcm5pZ2x6YmFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMjgxODQsImV4cCI6MjA4MzgwNDE4NH0.MCiWNCcmQRBmAvAbsbcpdMbSOWAg7zPqJynpCLf1RKQ";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Buat variabel global kosong dulu
-let sb = null; 
 let currentUser = null;
 let expenseChart = null;
 
-// Kategori
-const categories = { 
-    income: ["Gaji", "Bonus", "Bisnis"], 
-    expense: ["Makan", "Transport", "Belanja", "Tagihan", "Hiburan"] 
-};
-
-// ================= INIT =================
+// INIT
 window.addEventListener('DOMContentLoaded', async () => {
     feather.replace();
-    
-    try {
-        // 1. AMBIL KUNCI DARI VERCEL (SERVERLESS FUNCTION)
-        const response = await fetch('/api/config');
-        const config = await response.json();
-
-        // 2. INISIALISASI SUPABASE SETELAH KUNCI DIDAPAT
-        sb = window.supabase.createClient(config.SUPABASE_URL, config.SUPABASE_KEY);
-
-        // 3. LANJUTKAN LOGIKA SEPERTI BIASA
-        setupDefaults(); // Set tanggal default dll
-        
-        const { data: { session } } = await sb.auth.getSession();
-        if (session) { 
-            currentUser = session.user; 
-            initApp(); 
-        }
-
-    } catch (error) {
-        console.error("Gagal memuat konfigurasi:", error);
-        alert("Gagal terhubung ke server. Coba refresh halaman.");
-    }
-});
-
-// Fungsi bantuan untuk merapikan kode INIT
-function setupDefaults() {
     document.getElementById("date").valueAsDate = new Date();
+    
+    // Default Filter (1 Bulan)
     const today = new Date();
     const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
     document.getElementById("filter-start").valueAsDate = firstDay;
     document.getElementById("filter-end").valueAsDate = today;
-}
 
-// ... (SISANYA KE BAWAH TETAP SAMA: toggleSidebar, switchTab, dll) ...
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) { currentUser = session.user; initApp(); }
+});
 
+const categories = { income: ["Gaji", "Bonus", "Bisnis"], expense: ["Makan", "Transport", "Belanja", "Tagihan", "Hiburan"] };
 // NAVIGATION
 function toggleSidebar() {
     document.getElementById("sidebar").classList.add("active");

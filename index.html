@@ -41,7 +41,7 @@
   <section id="app-section" class="hidden">
     
     <header class="navbar no-print">
-        <div class="brand-small">FinaFlow <span class="badge">$</span></div>
+        <div class="brand-small">FinaFlow <span class="badge">Rp</span></div>
         <button onclick="toggleSidebar()" class="icon-btn"><i data-feather="menu"></i></button>
     </header>
 
@@ -125,7 +125,7 @@
                 </div>
             </div>
             <div class="glass-panel mt-20 no-print">
-                <h4><i data-feather="plus-circle"></i> Input Transaksi</h4>
+                <h4>INPUT TRANSAKSI</h4>
                 <div class="form-grid">
                     <div class="input-group">
                         <select id="type" onchange="updateCategories()">
@@ -141,8 +141,7 @@
                     <input type="number" id="amount" placeholder="Nominal (Rp)" class="modern-input" />
                    
                 </div>
-                <select id="plan-category" class="modern-input">
-    </select>
+                <select id="category" class="modern-input"></select>
                 <input type="text" id="desc" placeholder="Keterangan transaksi..." class="modern-input" />
                 <button onclick="addTransaction()" class="btn-glow full-width">Simpan Data</button>
                 
@@ -152,7 +151,7 @@
                         <input type="date" id="filter-start" class="mini-input">
                         <span>-</span>
                         <input type="date" id="filter-end" class="mini-input">
-                        <button onclick="loadTransactions('custom')" class="btn-icon"><i data-feather="search"></i></button>
+                        <button onclick="loadTransactions('custom')" class="btn-danger-icon"><i data-feather="search"></i></button>
                     </div>
                 </div>
             </div>
@@ -161,7 +160,7 @@
         <div id="view-planning" class="tab-content hidden">
             <div class="glass-panel">
                 <div class="panel-header">
-                    <h3><i data-feather="target"></i> Rencana Pengeluaran</h3>
+                    <h3>Rencana Pengeluaran</h3>
                 </div>
                 <div class="info-box">
                     <i data-feather="info"></i>
@@ -171,7 +170,10 @@
                 <div class="form-grid mt-20">
                     <input type="text" id="plan-item" placeholder="Nama Barang" class="modern-input" />
                     <input type="number" id="plan-amount" placeholder="Estimasi Harga" class="modern-input" />
-                    <select id="category" class="modern-input"></select>
+<select id="plan-category" class="modern-input">
+    </select>
+
+
                     <button onclick="addPlan()" class="btn-glow">Tambah</button>
                     
                 </div>
@@ -204,6 +206,27 @@
                 </div>
             </div>
         </div>
+        
+        
+<footer class="glass-panel mt-20 no-print footer-main">
+    <div class="footer-content">
+        <div class="footer-brand">
+            <i data-feather="hexagon"class="footer-logo"></i>
+            <span>FinaFlow</span>
+        </div>
+        <div class="footer-info">
+            <p>Smart & Futuristic Personal Finance Tracker</p>
+            <small class="text-muted">&copy; 2026 Xcurrate. All Rights Reserved.</small>
+        </div>
+        <div class="footer-links">
+            <a href="https://t.me/zuyaajakali" target="_blank">
+                <i data-feather="send"></i> Telegram
+            </a>
+                        <a href="mailto: mmicqueen@gmail.com"><i data-feather="mail"></i> Support</a>
+        </div>
+    </div>
+</footer>
+
 
     </main>
   </section>

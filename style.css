@@ -155,3 +155,68 @@ background: rgba(239, 68, 68, 0) !important;
   /*  box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); /* Efek glow merah */
  /*   transform: translateY(-2px);*/
 }
+
+/* --- FOOTER  --- */
+.footer-main {
+    margin-top: 40px !important;
+    padding: 30px !important;
+    border-top: 1px solid var(--glass-border);
+}
+
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.footer-logo {
+    width: 20px;
+    height: 20px;
+}
+
+.footer-info p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--text-main);
+}
+
+.footer-links {
+    display: flex;
+    gap: 20px;
+}
+
+.footer-links a {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: 0.3s;
+}
+
+.footer-links a:hover {
+    color: var(--primary);
+}
+
+/* Responsif untuk layar HP */
+@media (max-width: 600px) {
+    .footer-content {
+        flex-direction: column;
+        text-align: center;
+    }
+    .footer-links {
+        justify-content: center;
+    }
+}
