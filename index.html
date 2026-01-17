@@ -1,130 +1,114 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FinaFlow - Personal Finance Tracker</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Personal Finance Tracker</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-    <div id="auth-container" class="container auth-wrapper">
-        <div class="card auth-card">
-            <h2>FinaFlow</h2>
-            <p>Kelola keuanganmu dengan bijak.</p>
-            <form id="auth-form">
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="email" required placeholder="nama@email.com">
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="password" required placeholder="******">
-                </div>
-                <button type="submit" id="login-btn" class="btn btn-primary">Masuk</button>
-                <button type="button" id="register-btn" class="btn btn-outline">Daftar Akun Baru</button>
-            </form>
-            <p id="auth-message" class="message"></p>
+  <section id="auth-section">
+    <h2 style="text-align:center; color:#0f172a;">Personal Finance Tracker</h2>
+    <p style="text-align:center; margin-bottom:20px; color:#64748b;">Kelola keuanganmu dengan mudah</p>
+
+    <div class="form-group">
+        <input type="email" id="email" placeholder="Email Address" required />
+        <input type="password" id="password" placeholder="Password" required />
+    </div>
+    
+    <p id="auth-message" style="color:red; font-size:0.9rem; text-align:center; display:none;"></p>
+
+    <div class="auth-buttons">
+      <button onclick="login()">Masuk</button>
+      <button class="secondary" onclick="register()">Daftar Baru</button>
+    </div>
+  </section>
+
+  <section id="app-section" class="hidden">
+
+    <header>
+      <div>
+        <h1 style="font-size: 1.5rem;">Dashboard Keuangan</h1>
+        <small id="user-email-display" style="color:#64748b;"></small>
+      </div>
+      <button class="danger" onclick="logout()">Logout</button>
+    </header>
+
+    <div class="cards">
+      <div class="card">
+        <h4>Saldo Saat Ini</h4>
+        <p id="saldo" style="font-size: 1.5rem; font-weight:bold; color:#0f172a;">Rp 0</p>
+      </div>
+      <div class="card income">
+        <h4>Pemasukan</h4>
+        <p id="total-income" style="font-size: 1.2rem; font-weight:bold; color:#16a34a;">Rp 0</p>
+      </div>
+      <div class="card expense">
+        <h4>Pengeluaran</h4>
+        <p id="total-expense" style="font-size: 1.2rem; font-weight:bold; color:#dc2626;">Rp 0</p>
+      </div>
+    </div>
+
+    <div class="grid-layout">
+        <div class="chart-card">
+            <h4 style="margin-bottom:15px;">Proporsi Keuangan</h4>
+            <div style="height:250px; display:flex; justify-content:center;">
+                <canvas id="financeChart"></canvas>
+            </div>
+        </div>
+
+        <div class="form-card">
+            <h3>Tambah Transaksi</h3>
+            <input type="text" id="desc" placeholder="Keterangan (cth: Gaji, Makan)" />
+            <input type="number" id="amount" placeholder="Nominal (Rp)" />
+            <input type="date" id="date" />
+            
+            <select id="type">
+                <option value="income">Pemasukan (+)</option>
+                <option value="expense">Pengeluaran (-)</option>
+            </select>
+
+            <button onclick="addTransaction()" style="width:100%; margin-top:10px;">Simpan Transaksi</button>
         </div>
     </div>
 
-    <div id="app-container" class="container hidden">
-        <header class="app-header">
-            <h1>FinaFlow</h1>
-            <div class="user-info">
-                <span id="user-email">user@email.com</span>
-                <button id="logout-btn" class="btn btn-sm btn-danger">Keluar</button>
-            </div>
-        </header>
+    <div id="advice-card" class="advice" style="display:none;"></div>
 
-        <section class="summary-grid">
-            <div class="card summary-card balance">
-                <h3>Saldo Saat Ini</h3>
-                <p id="total-balance">Rp 0</p>
-            </div>
-            <div class="card summary-card income">
-                <h3>Pemasukan (Bulan Ini)</h3>
-                <p id="total-income">Rp 0</p>
-            </div>
-            <div class="card summary-card expense">
-                <h3>Pengeluaran (Bulan Ini)</h3>
-                <p id="total-expense">Rp 0</p>
-            </div>
-        </section>
+    <div style="margin-top:30px;">
+        <div class="filter-bar">
+            <button onclick="loadTransactions('day')">Harian</button>
+            <button onclick="loadTransactions('week')">Mingguan</button>
+            <button onclick="loadTransactions('month')">Bulanan</button>
+            <button onclick="loadTransactions('all')">Semua</button>
+            <button onclick="window.print()" class="secondary">🖨️ Cetak</button>
+        </div>
 
-        <section id="advice-section" class="card advice-card">
-            <h3>💡 Saran Finansial</h3>
-            <p id="advice-text">Data belum cukup untuk memberikan saran.</p>
-        </section>
-
-        <div class="main-content">
-            <div class="content-left">
-                <div class="card">
-                    <h3>Tambah Transaksi</h3>
-                    <form id="transaction-form">
-                        <div class="form-group">
-                            <label>Deskripsi</label>
-                            <input type="text" id="t-desc" placeholder="Contoh: Gaji, Makan Siang" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Nominal (Rp)</label>
-                            <input type="number" id="t-amount" placeholder="0" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Tipe</label>
-                            <select id="t-type">
-                                <option value="income">Pemasukan (+)</option>
-                                <option value="expense">Pengeluaran (-)</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Tanggal</label>
-                            <input type="date" id="t-date" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100">+ Tambah Data</button>
-                    </form>
-                </div>
-
-                <div class="card chart-container">
-                    <h3>Proporsi Keuangan</h3>
-                    <canvas id="financeChart"></canvas>
-                </div>
-            </div>
-
-            <div class="content-right">
-                <div class="card">
-                    <div class="card-header-row">
-                        <h3>Riwayat Transaksi</h3>
-                        <div class="actions">
-                            <select id="filter-date" class="form-select-sm">
-                                <option value="all">Semua</option>
-                                <option value="month">Bulan Ini</option>
-                            </select>
-                            <button onclick="window.print()" class="btn btn-sm btn-outline">🖨️ Cetak</button>
-                        </div>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Tanggal</th>
-                                    <th>Deskripsi</th>
-                                    <th>Nominal</th>
-                                    <th>Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody id="transaction-list">
-                                </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+        <div class="table-responsive">
+            <table id="transaction-table">
+                <thead>
+                    <tr>
+                        <th>Tanggal</th>
+                        <th>Keterangan</th>
+                        <th>Tipe</th>
+                        <th>Nominal</th>
+                        <th class="no-print">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    </tbody>
+            </table>
         </div>
     </div>
 
-    <script src="app.js"></script>
+  </section>
+
+  <script src="app.js"></script>
 </body>
 </html>
