@@ -3,163 +3,209 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FinaFlow - Rencana & Realisasi</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <title>FinaFlow - Antigravity v4.1</title>
   
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <script src="https://unpkg.com/feather-icons"></script>
   
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <section id="auth-section">
-    <div class="auth-card">
-        <h2 style="color:#003366">FinaFlow 💎</h2>
-        <p>Login untuk melanjutkan</p>
-        <div class="form-group">
-            <input type="email" id="email" placeholder="Email" />
+  <section id="auth-section" class="full-height">
+    <div class="glass-card auth-box">
+        <div class="brand">
+            <i data-feather="hexagon" class="logo-icon"></i>
+            <h2>FinaFlow</h2>
+        </div>
+        <p class="subtitle">Next Gen Finance Tracker</p>
+        
+        <div class="input-group">
+            <i data-feather="mail"></i>
+            <input type="email" id="email" placeholder="Email Address" />
+        </div>
+        <div class="input-group">
+            <i data-feather="lock"></i>
             <input type="password" id="password" placeholder="Password" />
         </div>
-        <button onclick="login()">Masuk</button>
-        <button class="secondary" onclick="register()">Daftar</button>
+        
+        <button onclick="login()" class="btn-glow">Masuk System</button>
+        <button onclick="register()" class="btn-outline">Daftar Akun</button>
         <p id="auth-msg"></p>
     </div>
   </section>
 
   <section id="app-section" class="hidden">
     
-    <nav class="navbar no-print">
-        <div class="menu-toggle" onclick="toggleMenu()">☰</div>
-        <div class="logo">FinaFlow</div>
-    </nav>
+    <header class="navbar no-print">
+        <div class="brand-small">FinaFlow <span class="badge">PRO</span></div>
+        <button onclick="toggleSidebar()" class="icon-btn"><i data-feather="menu"></i></button>
+    </header>
 
-    <div id="sidebar" class="sidebar">
-        <button onclick="closeMenu()" class="close-btn">&times;</button>
-        <div class="user-profile">
-            <div class="avatar">👤</div>
-            <small id="user-display">User</small>
+    <aside id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <div class="profile-mini">
+                <i data-feather="user"></i> <span id="user-display">User</span>
+            </div>
+            <i data-feather="x" onclick="closeSidebar()" style="cursor:pointer"></i>
         </div>
-        <hr>
-        <button onclick="switchTab('dashboard')" class="nav-item">📊 Dashboard Utama</button>
-        <button onclick="switchTab('planning')" class="nav-item">📝 Rencana Pengeluaran</button>
-        <button onclick="switchTab('settings')" class="nav-item">⚙️ Info & Pengaturan</button>
-        <button onclick="logout()" class="nav-item danger">Keluar Aplikasi</button>
-    </div>
-    <div id="overlay" onclick="closeMenu()"></div>
+        <hr class="divider">
+        <nav class="nav-links">
+            <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-item active">
+                <i data-feather="grid"></i> Dashboard
+            </button>
+            <button onclick="switchTab('planning')" id="nav-planning" class="nav-item">
+                <i data-feather="list"></i> Rencana
+            </button>
+            <button onclick="switchTab('settings')" id="nav-settings" class="nav-item">
+                <i data-feather="settings"></i> Pengaturan
+            </button>
+            <button onclick="logout()" class="nav-item danger">
+                <i data-feather="log-out"></i> Keluar
+            </button>
+        </nav>
+    </aside>
+    <div id="overlay" onclick="closeSidebar()"></div>
 
-    <div class="container">
+    <main class="container">
         
         <div id="view-dashboard" class="tab-content">
             
-            <div id="export-area" class="paper">
-                <header class="report-header">
-                    <h2>Laporan Keuangan</h2>
-                    <p id="current-date" style="color:#666; font-size:0.9rem;">Per hari ini</p>
-                </header>
+            <div id="export-content" class="glass-panel">
+                <div class="panel-header">
+                    <div>
+                        <h3>Financial Overview</h3>
+                        <p id="current-date" class="text-muted">Realtime Data</p>
+                    </div>
 
-                <div class="cards">
-                    <div class="card balance">
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card balance">
                         <small>Sisa Saldo</small>
-                        <p id="saldo" class="big-num">Rp 0</p>
+                        <h2 id="saldo">Rp 0</h2>
                     </div>
-                    <div class="card income">
+                    <div class="stat-card income">
                         <small>Pemasukan</small>
-                        <p id="total-income" class="big-num green">Rp 0</p>
+                        <h3 id="total-income">Rp 0</h3>
                     </div>
-                    <div class="card expense">
+                    <div class="stat-card expense">
                         <small>Pengeluaran</small>
-                        <p id="total-expense" class="big-num red">Rp 0</p>
+                        <h3 id="total-expense">Rp 0</h3>
                     </div>
                 </div>
 
-                <div class="chart-container">
-                    <h4>Analisis Pengeluaran</h4>
-                    <div style="height:250px; position:relative;">
-                        <canvas id="expenseChart"></canvas>
-                    </div>
+                <div class="chart-section">
+                    <canvas id="expenseChart"></canvas>
                 </div>
 
-                <div class="print-only-table">
-                     <h4>Rincian Transaksi Terakhir</h4>
-                     <table id="print-table" style="width:100%; border:1px solid #ddd; margin-top:10px;">
+                <div class="mt-20">
+                    <h4 class="text-muted" style="margin-bottom:10px">Riwayat Transaksi</h4>
+                    <div class="table-responsive">
+                        <table id="transaction-table" class="tech-table">
+                            <thead>
+                                <tr>
+                                    <th>Tanggal</th>
+                                    <th>Keterangan</th>
+                                    <th>Nominal</th>
+                                    <th class="no-print">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
                         </table>
+                        <p></p>
+                                            <div class="export-actions no-print" data-html2canvas-ignore="true">
+                        <button onclick="exportJPG()" title="Save JPG" class="btn-danger-icon"><i data-feather="image"></i></button>
+                        <button onclick="window.print()" title="Print PDF" class="btn-danger-icon"><i data-feather="printer"></i></button>
+                    </div>
+                    </div>
                 </div>
             </div>
-            <div class="action-bar no-print">
-                <button onclick="exportJPG()" class="btn-export jpg">📸 Simpan JPG</button>
-                <button onclick="window.print()" class="btn-export pdf">📄 Cetak PDF</button>
-            </div>
-
-            <div class="form-card mt-20 no-print">
-                <h3>➕ Catat Transaksi Baru</h3>
-                <div class="row">
-                    <select id="type" onchange="updateCategories()">
-                        <option value="expense">Pengeluaran (-)</option>
-                        <option value="income">Pemasukan (+)</option>
-                    </select>
-                    <input type="date" id="date" />
+            <div class="glass-panel mt-20 no-print">
+                <h4><i data-feather="plus-circle"></i> Input Transaksi</h4>
+                <div class="form-grid">
+                    <div class="input-group">
+                        <select id="type" onchange="updateCategories()">
+                            <option value="expense">Pengeluaran</option>
+                            <option value="income">Pemasukan</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <input type="date" id="date" />
+                    </div>
                 </div>
-                <input type="number" id="amount" placeholder="Nominal (Rp)" />
-                <select id="category"></select>
-                <input type="text" id="desc" placeholder="Catatan" />
-                <button onclick="addTransaction()">Simpan Transaksi</button>
-            </div>
-
-            <div class="data-section mt-20 no-print">
-                <div class="filter-box">
-                    <label>Filter:</label>
-                    <input type="date" id="filter-start"> <span>s/d</span> <input type="date" id="filter-end">
-                    <button onclick="loadTransactions('custom')" style="width:auto; padding:5px 15px;">Cari</button>
+                <div class="form-grid">
+                    <input type="number" id="amount" placeholder="Nominal (Rp)" class="modern-input" />
+                   
                 </div>
-                <table id="transaction-table">
-                    <thead>
-                        <tr>
-                            <th>Tgl</th>
-                            <th>Ket</th>
-                            <th>Rp</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
+                <select id="plan-category" class="modern-input">
+    </select>
+                <input type="text" id="desc" placeholder="Keterangan transaksi..." class="modern-input" />
+                <button onclick="addTransaction()" class="btn-glow full-width">Simpan Data</button>
+                
+                <div class="filter-row mt-20">
+                    <span class="text-muted">Filter:</span>
+                    <div class="date-filter">
+                        <input type="date" id="filter-start" class="mini-input">
+                        <span>-</span>
+                        <input type="date" id="filter-end" class="mini-input">
+                        <button onclick="loadTransactions('custom')" class="btn-icon"><i data-feather="search"></i></button>
+                    </div>
+                </div>
             </div>
         </div>
 
         <div id="view-planning" class="tab-content hidden">
-            <div class="form-card">
-                <h3>📝 Daftar Rencana Pengeluaran</h3>
-                <p style="color:#666; font-size:0.9rem;">Catat dulu kebutuhanmu agar tidak lupa. Centang jika sudah terealisasi.</p>
-                <div class="row">
-                    <input type="text" id="plan-item" placeholder="Nama Barang/Kebutuhan" />
-                    <input type="number" id="plan-amount" placeholder="Estimasi Harga" style="width:120px" />
+            <div class="glass-panel">
+                <div class="panel-header">
+                    <h3><i data-feather="target"></i> Rencana Pengeluaran</h3>
                 </div>
-                <button onclick="addPlan()" class="secondary">Tambahkan ke Daftar</button>
+                <div class="info-box">
+                    <i data-feather="info"></i>
+                    <small>Centang kotak jika barang sudah dibeli. Sistem akan otomatis memindahkannya ke Daftar Pengeluaran.</small>
+                </div>
+
+                <div class="form-grid mt-20">
+                    <input type="text" id="plan-item" placeholder="Nama Barang" class="modern-input" />
+                    <input type="number" id="plan-amount" placeholder="Estimasi Harga" class="modern-input" />
+                    <select id="category" class="modern-input"></select>
+                    <button onclick="addPlan()" class="btn-glow">Tambah</button>
+                    
+                </div>
             </div>
 
-            <div id="planning-list" class="planning-container">
-                </div>
+            <div id="planning-list" class="mt-20"></div>
         </div>
 
         <div id="view-settings" class="tab-content hidden">
-            <div class="card">
-                <h3>ℹ️ Tentang Aplikasi</h3>
-                <p>Aplikasi ini dirancang untuk mencatat arus kas dan merencanakan pengeluaran masa depan.</p>
-                <hr>
-                <h4>📞 Contact Us</h4>
-                <p>Email: admin@finaflow.app</p>
-                <p>WhatsApp: +62 812-3456-7890</p>
+            <div class="glass-panel">
+                <h3>System Info</h3>
+                <p class="text-muted">FinaFlow v4.1 - Antigravity Edition</p>
+                <div class="mt-20">
+                    <label>Developer</label>
+                    <p>Jatmiko</p>
+                </div>
             </div>
             
-            <div class="card mt-20" style="border-left: 4px solid red;">
-                <h4>Zona Reset</h4>
-                <button onclick="autoCleanData()" class="secondary">Bersihkan Data (> 30 Hari)</button>
-                <button onclick="deleteAllData()" class="danger mt-10">Hapus SEMUA Data</button>
+            <div class="glass-panel mt-20 border-danger">
+                <h4 class="text-danger"><i data-feather="alert-triangle"></i> Danger Zone</h4>
+                <p class="text-muted" style="font-size:0.8rem; margin-bottom:15px">Tindakan ini tidak dapat dibatalkan.</p>
+                
+                <div class="danger-actions">
+                    <button onclick="autoCleanData()" class="btn-outline danger">
+                        Bersihkan Data Lama (>30 Hari)
+                    </button>
+                    <button onclick="deleteAllData()" class="btn-glow danger">
+                        Factory Reset (Hapus SEMUA)
+                    </button>
+                </div>
             </div>
         </div>
 
-    </div>
+    </main>
   </section>
 
   <script src="app.js"></script>
