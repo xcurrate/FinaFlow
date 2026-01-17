@@ -1,58 +1,60 @@
-// ================= CONFIGURASI =================
-// GANTI DENGAN URL & KEY SUPABASE MILIKMU SENDIRI
-const SUPABASE_URL = "https://sbxtfqidotarniglzban.supabase.co";
+// ================= CONFIG =================
+// ⚠️ GANTI DENGAN URL & KEY SUPABASE MILIKMU
+const SUPABASE_URL = "https://sbxtfqidotarniglzban.supabase.co"; 
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNieHRmcWlkb3Rhcm5pZ2x6YmFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMjgxODQsImV4cCI6MjA4MzgwNDE4NH0.MCiWNCcmQRBmAvAbsbcpdMbSOWAg7zPqJynpCLf1RKQ";
 
-// Inisialisasi Client
+// ✅ FIXED: Gunakan 'sb' agar tidak bentrok
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// State Global
 let currentUser = null;
-let financeChart = null;
+let expenseChart = null;
 
-// ================= EVENT LISTENER (Saat Halaman Dimuat) =================
+// Kategori List
+const categories = {
+    income: ["Gaji Bulanan", "Bonus/THR", "Hasil Usaha", "Investasi", "Lainnya"],
+    expense: ["Makan & Minum", "Transportasi", "Tempat Tinggal", "Belanja", "Tagihan (Listrik/Air)", "Hiburan", "Kesehatan", "Lainnya"]
+};
+
+// ================= INIT =================
 window.addEventListener('DOMContentLoaded', async () => {
-    // Cek apakah user sudah login sebelumnya
-    const { data: { session } } = await sb.auth.getSession();
+    // Set default date
+    document.getElementById("date").valueAsDate = new Date();
+    // Set default categories
+    updateCategoryOptions('income');
     
+    // Check Session
+    const { data: { session } } = await sb.auth.getSession();
     if (session) {
         currentUser = session.user;
-        initApp();
+        showApp();
     }
 });
 
-// ================= AUTHENTICATION =================
-async function register() {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
-    const msg = document.getElementById("auth-message");
-
-    if(!email || !password) return alert("Isi email dan password!");
-
-    const { error } = await sb.auth.signUp({ email, password });
-
-    if (error) {
-        msg.style.display = "block";
-        msg.innerText = "Error: " + error.message;
-    } else {
-        alert("Pendaftaran berhasil! Cek email untuk konfirmasi atau coba login.");
-    }
-}
-
+// ================= AUTH LOGIC =================
 async function login() {
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
-    const msg = document.getElementById("auth-message");
-
+    const msg = document.getElementById("auth-msg");
+    
+    msg.innerText = "Loading...";
+    
     const { data, error } = await sb.auth.signInWithPassword({ email, password });
-
-    if (error) {
-        msg.style.display = "block";
-        msg.innerText = "Gagal Masuk: " + error.message;
-    } else {
+    
+    if(error) msg.innerText = "Error: " + error.message;
+    else {
         currentUser = data.user;
-        initApp();
+        showApp();
     }
+}
+
+async function register() {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+    const msg = document.getElementById("auth-msg");
+
+    const { error } = await sb.auth.signUp({ email, password });
+    if(error) msg.innerText = "Error: " + error.message;
+    else alert("Sukses! Cek email untuk verifikasi.");
 }
 
 async function logout() {
@@ -60,182 +62,181 @@ async function logout() {
     location.reload();
 }
 
-// ================= INITIALIZATION =================
-function initApp() {
+function showApp() {
     document.getElementById("auth-section").classList.add("hidden");
     document.getElementById("app-section").classList.remove("hidden");
-    document.getElementById("user-email-display").innerText = currentUser.email;
-
-    // Set tanggal default ke hari ini
-    document.getElementById("date").valueAsDate = new Date();
-
-    loadTransactions("month"); // Default load data bulan ini
+    document.getElementById("user-display").innerText = currentUser.email;
+    loadTransactions("month");
 }
 
-// ================= CRUD (DATABASE) =================
+// ================= UI LOGIC =================
+function setFormType(type) {
+    document.getElementById("type").value = type;
+    
+    // Update Button Style
+    const btnInc = document.getElementById("btn-inc");
+    const btnExp = document.getElementById("btn-exp");
+    
+    if(type === 'income') {
+        btnInc.classList.add("active");
+        btnExp.classList.remove("active");
+    } else {
+        btnExp.classList.add("active");
+        btnInc.classList.remove("active");
+    }
+
+    updateCategoryOptions(type);
+}
+
+function updateCategoryOptions(type) {
+    const select = document.getElementById("category");
+    select.innerHTML = "";
+    categories[type].forEach(cat => {
+        const opt = document.createElement("option");
+        opt.value = cat;
+        opt.innerText = cat;
+        select.appendChild(opt);
+    });
+}
+
+// ================= CRUD =================
 async function addTransaction() {
-    const desc = document.getElementById("desc").value;
+    const type = document.getElementById("type").value;
+    const category = document.getElementById("category").value;
+    const desc = document.getElementById("desc").value || "-";
     const amount = Number(document.getElementById("amount").value);
     const date = document.getElementById("date").value;
-    const type = document.getElementById("type").value;
 
-    if(!desc || !amount || !date) return alert("Mohon lengkapi semua data!");
+    if(!amount || !date) return alert("Nominal & Tanggal wajib diisi!");
 
     const { error } = await sb.from("transactions").insert({
         user_id: currentUser.id,
-        description: desc, // Pastikan kolom di supabase namanya 'description'
+        type: type,
+        category: category, // Kolom baru
+        description: desc,
         amount: amount,
-        date: date,
-        type: type
+        date: date
     });
 
-    if (error) alert("Gagal simpan: " + error.message);
+    if(error) alert("Gagal simpan: " + error.message);
     else {
-        // Reset form input
         document.getElementById("desc").value = "";
         document.getElementById("amount").value = "";
-        loadTransactions("month"); // Refresh data
+        loadTransactions("month");
     }
 }
 
 async function deleteTransaction(id) {
-    if(!confirm("Yakin hapus data ini?")) return;
-    
+    if(!confirm("Hapus data ini?")) return;
     const { error } = await sb.from("transactions").delete().eq("id", id);
-    
-    if(error) alert("Gagal hapus: " + error.message);
-    else loadTransactions("month");
+    if(!error) loadTransactions("month");
 }
 
-// ================= LOAD & FILTER DATA =================
-async function loadTransactions(filterType) {
-    // Logika Filter Tanggal
-    const startDate = new Date();
-    if (filterType === 'day') startDate.setDate(startDate.getDate() - 1);
-    else if (filterType === 'week') startDate.setDate(startDate.getDate() - 7);
-    else if (filterType === 'month') startDate.setMonth(startDate.getMonth() - 1);
-    else if (filterType === 'all') startDate.setFullYear(2000); // Ambil semua data
-
-    let query = sb
-        .from("transactions")
+// ================= LOAD DATA & CHART =================
+async function loadTransactions(filter) {
+    let query = sb.from("transactions")
         .select("*")
         .eq("user_id", currentUser.id)
         .order("date", { ascending: false });
 
-    // Terapkan filter jika bukan 'all'
-    if (filterType !== 'all') {
-        query = query.gte("date", startDate.toISOString().split("T")[0]);
+    // Filter Logic
+    if(filter === 'month') {
+        const date = new Date();
+        const firstDay = new Date(date.getFullYear(), date.getMonth(), 1).toISOString();
+        query = query.gte("date", firstDay);
     }
 
     const { data, error } = await query;
+    if(error) return console.error(error);
 
-    if(error) console.error("Error load data:", error);
-    else {
-        renderTable(data);
-        renderSummary(data);
-        renderChart(data);
-        renderAdvice(data);
-    }
+    renderTable(data);
+    renderStats(data);
 }
 
-// ================= RENDER UI =================
 function renderTable(data) {
     const tbody = document.querySelector("#transaction-table tbody");
     tbody.innerHTML = "";
 
-    if(data.length === 0) {
-        tbody.innerHTML = "<tr><td colspan='5' style='text-align:center'>Belum ada data.</td></tr>";
-        return;
-    }
-
     data.forEach(t => {
-        const row = `
+        const color = t.type === 'income' ? 'green' : 'red';
+        const sign = t.type === 'income' ? '+' : '-';
+        
+        tbody.innerHTML += `
             <tr>
                 <td>${t.date}</td>
-                <td>${t.description}</td> 
-                <td style="color:${t.type === 'income' ? 'green' : 'red'}">${t.type.toUpperCase()}</td>
-                <td>Rp ${t.amount.toLocaleString()}</td>
+                <td><span style="font-weight:bold; color:#555">${t.category || 'Umum'}</span></td>
+                <td style="color:#888">${t.description}</td>
+                <td class="${color}">${sign} Rp ${t.amount.toLocaleString()}</td>
                 <td class="no-print">
-                    <button class="danger" style="padding:5px 10px;" onclick="deleteTransaction(${t.id})">Hapus</button>
+                    <button class="danger" style="padding:4px 8px" onclick="deleteTransaction(${t.id})">&times;</button>
                 </td>
             </tr>
         `;
-        tbody.innerHTML += row;
     });
 }
 
-function renderSummary(data) {
-    let income = 0;
-    let expense = 0;
+function renderStats(data) {
+    let inc = 0, exp = 0;
+    const expenseCategories = {};
 
     data.forEach(t => {
-        if (t.type === "income") income += t.amount;
-        else expense += t.amount;
+        if(t.type === 'income') {
+            inc += t.amount;
+        } else {
+            exp += t.amount;
+            // Grouping data untuk Chart
+            const cat = t.category || "Lainnya";
+            if(!expenseCategories[cat]) expenseCategories[cat] = 0;
+            expenseCategories[cat] += t.amount;
+        }
     });
 
-    document.getElementById("saldo").innerText = `Rp ${(income - expense).toLocaleString()}`;
-    document.getElementById("total-income").innerText = `Rp ${income.toLocaleString()}`;
-    document.getElementById("total-expense").innerText = `Rp ${expense.toLocaleString()}`;
+    // Update Kartu Atas
+    document.getElementById("saldo").innerText = "Rp " + (inc - exp).toLocaleString();
+    document.getElementById("total-income").innerText = "Rp " + inc.toLocaleString();
+    document.getElementById("total-expense").innerText = "Rp " + exp.toLocaleString();
+
+    // Update Chart
+    renderChart(expenseCategories);
 }
 
-function renderChart(data) {
-    let income = 0;
-    let expense = 0;
+function renderChart(categoryData) {
+    const ctx = document.getElementById("expenseChart").getContext('2d');
+    const labels = Object.keys(categoryData);
+    const values = Object.values(categoryData);
 
-    data.forEach(t => {
-        if (t.type === "income") income += t.amount;
-        else expense += t.amount;
-    });
+    // Toggle Empty State
+    if(labels.length === 0) {
+        document.getElementById("empty-chart-msg").classList.remove("hidden");
+        document.querySelector(".chart-wrapper canvas").classList.add("hidden");
+        return;
+    } else {
+        document.getElementById("empty-chart-msg").classList.add("hidden");
+        document.querySelector(".chart-wrapper canvas").classList.remove("hidden");
+    }
 
-    // Hapus chart lama jika ada agar tidak menumpuk (bug chart.js umum)
-    if (financeChart) financeChart.destroy();
+    if(expenseChart) expenseChart.destroy();
 
-    const ctx = document.getElementById("financeChart").getContext('2d');
-    financeChart = new Chart(ctx, {
-        type: "doughnut",
+    expenseChart = new Chart(ctx, {
+        type: 'doughnut',
         data: {
-            labels: ["Pemasukan", "Pengeluaran"],
+            labels: labels,
             datasets: [{
-                data: [income, expense],
-                backgroundColor: ["#22c55e", "#ef4444"],
-                borderWidth: 0
+                data: values,
+                backgroundColor: [
+                    '#ef4444', '#f97316', '#f59e0b', '#84cc16', 
+                    '#06b6d4', '#3b82f6', '#8b5cf6', '#d946ef'
+                ],
+                borderWidth: 2,
+                borderColor: '#ffffff'
             }]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'right', labels: { boxWidth: 12 } }
+            }
         }
     });
-}
-
-function renderAdvice(data) {
-    let income = 0;
-    let expense = 0;
-
-    data.forEach(t => {
-        if (t.type === "income") income += t.amount;
-        else expense += t.amount;
-    });
-
-    const card = document.getElementById("advice-card");
-    card.className = "advice"; // Reset class
-
-    if (income === 0 && expense === 0) {
-        card.style.display = "none";
-        return;
-    }
-
-    card.style.display = "block";
-
-    if (expense > income * 0.8) {
-        card.classList.add("red");
-        card.innerHTML = "⚠️ <b>PERINGATAN:</b> Pengeluaranmu boros (>80% Pemasukan). Segera berhemat!";
-    } else if (expense < income * 0.5 && income > 0) {
-        card.classList.add("green");
-        card.innerHTML = "✅ <b>BAGUS:</b> Keuanganmu sangat sehat. Terus menabung!";
-    } else {
-        card.style.background = "#e2e8f0";
-        card.style.color = "#334155";
-        card.innerHTML = "ℹ️ <b>INFO:</b> Keuanganmu stabil, tapi tetap hati-hati.";
-    }
 }
