@@ -3,8 +3,8 @@ console.log("1. Script app.js mulai dimuat...");
 
 // --- 1. SETUP SUPABASE ---
 // ⚠️ PASTIKAN INI SUDAH DIISI DENGAN BENAR
-const supabaseUrl = 'MASUKKAN_SUPABASE_URL_DISINI'; 
-const supabaseKey = 'MASUKKAN_SUPABASE_ANON_KEY_DISINI';
+const supabaseUrl = 'https://sbxtfqidotarniglzban.supabase.co'; 
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNieHRmcWlkb3Rhcm5pZ2x6YmFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyMjgxODQsImV4cCI6MjA4MzgwNDE4NH0.MCiWNCcmQRBmAvAbsbcpdMbSOWAg7zPqJynpCLf1RKQ';
 
 let supabase;
 
