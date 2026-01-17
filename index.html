@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FinaFlow - Antigravity v4.1</title>
+  <title>FinaFlow - Pencatat Keungan 3.3</title>
   
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -29,7 +29,7 @@
         </div>
         <div class="input-group">
             <i data-feather="lock"></i>
-            <input type="password" id="password" placeholder="Password" />
+            <input type="password" id="password" placeholder="Sandi" />
         </div>
         
         <button onclick="login()" class="btn-glow">Masuk System</button>
@@ -41,7 +41,7 @@
   <section id="app-section" class="hidden">
     
     <header class="navbar no-print">
-        <div class="brand-small">FinaFlow <span class="badge">PRO</span></div>
+        <div class="brand-small">FinaFlow <span class="badge">$</span></div>
         <button onclick="toggleSidebar()" class="icon-btn"><i data-feather="menu"></i></button>
     </header>
 
@@ -55,7 +55,7 @@
         <hr class="divider">
         <nav class="nav-links">
             <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-item active">
-                <i data-feather="grid"></i> Dashboard
+                <i data-feather="grid"></i> Dasbor
             </button>
             <button onclick="switchTab('planning')" id="nav-planning" class="nav-item">
                 <i data-feather="list"></i> Rencana
@@ -77,8 +77,8 @@
             <div id="export-content" class="glass-panel">
                 <div class="panel-header">
                     <div>
-                        <h3>Financial Overview</h3>
-                        <p id="current-date" class="text-muted">Realtime Data</p>
+                        <h3>Gambaran Umum Keuangan</h3>
+                        <p id="current-date" class="text-muted">Data Waktu Nyata</p>
                     </div>
 
                 </div>
@@ -111,7 +111,7 @@
                                     <th>Tanggal</th>
                                     <th>Keterangan</th>
                                     <th>Nominal</th>
-                                    <th class="no-print">Action</th>
+                                    <th class="no-print">Opsi</th>
                                 </tr>
                             </thead>
                             <tbody></tbody>
@@ -183,10 +183,10 @@
         <div id="view-settings" class="tab-content hidden">
             <div class="glass-panel">
                 <h3>System Info</h3>
-                <p class="text-muted">FinaFlow v4.1 - Antigravity Edition</p>
+                <p class="text-muted">FinaFlow v3.0</p>
                 <div class="mt-20">
                     <label>Developer</label>
-                    <p>Jatmiko</p>
+                    <p>xcurrate n khielz</p>
                 </div>
             </div>
             
@@ -196,10 +196,10 @@
                 
                 <div class="danger-actions">
                     <button onclick="autoCleanData()" class="btn-outline danger">
-                        Bersihkan Data Lama (>30 Hari)
+                        Bersihkan Data Lebih dari 30 Hari
                     </button>
                     <button onclick="deleteAllData()" class="btn-glow danger">
-                        Factory Reset (Hapus SEMUA)
+                        Hapus Semua
                     </button>
                 </div>
             </div>
