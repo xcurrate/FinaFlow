@@ -1,4 +1,3 @@
-;
 // ================= CONFIGURASI =================
 // GANTI DENGAN URL & KEY SUPABASE MILIKMU SENDIRI
 const SUPABASE_URL = "https://sbxtfqidotarniglzban.supabase.co";
