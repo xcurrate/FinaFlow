@@ -350,7 +350,7 @@ async function login() {
     // Cek apakah input adalah username (tanpa @) atau email (dengan @)
     if (!e.includes("@")) {
         // Jika username, tambahkan domain "bayangan"
-        e = e.trim().toLowerCase() + "@finaflow.me";
+        e = e.trim().toLowerCase() + "@fina.com";
     }
 
     // Supabase menerima 'e' yang sudah diproses (tetap berformat email di sistem)
