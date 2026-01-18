@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FinaFlow - Pencatat Keungan 3.3</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <script src="https://unpkg.com/feather-icons"></script>
+  
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <section id="auth-section" class="full-height">
+    <div class="glass-card auth-box">
+        <div class="brand">
+            <i data-feather="hexagon" class="logo-icon"></i>
+            <h2>FinaFlow</h2>
+        </div>
+        <p class="subtitle">Next Gen Finance Tracker</p>
+        
+        <div class="input-group">
+            <i data-feather="mail"></i>
+            <input type="email" id="email" placeholder="Email Address" />
+        </div>
+        <div class="input-group">
+            <i data-feather="lock"></i>
+            <input type="password" id="password" placeholder="Sandi" />
+        </div>
+        
+        <button onclick="login()" class="btn-glow">Masuk System</button>
+        <button onclick="register()" class="btn-outline">Daftar Akun</button>
+        <p id="auth-msg"></p>
+    </div>
+  </section>
+
+  <section id="app-section" class="hidden">
+    
+    <header class="navbar no-print">
+        <div class="brand-small">FinaFlow <span class="badge">Rp</span></div>
+        <button onclick="toggleSidebar()" class="icon-btn"><i data-feather="menu"></i></button>
+    </header>
+
+    <aside id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <div class="profile-mini">
+                <i data-feather="user"></i> <span id="user-display">User</span>
+            </div>
+            <i data-feather="x" onclick="closeSidebar()" style="cursor:pointer"></i>
+        </div>
+        <hr class="divider">
+        <nav class="nav-links">
+            <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-item active">
+                <i data-feather="grid"></i> Dasbor
+            </button>
+            <button onclick="switchTab('planning')" id="nav-planning" class="nav-item">
+                <i data-feather="list"></i> Rencana
+            </button>
+            <button onclick="switchTab('settings')" id="nav-settings" class="nav-item">
+                <i data-feather="settings"></i> Pengaturan
+            </button>
+            <button onclick="logout()" class="nav-item danger">
+                <i data-feather="log-out"></i> Keluar
+            </button>
+        </nav>
+    </aside>
+    <div id="overlay" onclick="closeSidebar()"></div>
+
+    <main class="container">
+        
+        <div id="view-dashboard" class="tab-content">
+            
+            <div id="export-content" class="glass-panel">
+                <div class="panel-header">
+                    <div>
+                        <h3>Gambaran Umum Keuangan</h3>
+                        <p id="current-date" class="text-muted">Data Waktu Nyata</p>
+                    </div>
+
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card balance">
+                        <small>Sisa Saldo</small>
+                        <h2 id="saldo">Rp 0</h2>
+                    </div>
+                    <div class="stat-card income">
+                        <small>Pemasukan</small>
+                        <h3 id="total-income">Rp 0</h3>
+                    </div>
+                    <div class="stat-card expense">
+                        <small>Pengeluaran</small>
+                        <h3 id="total-expense">Rp 0</h3>
+                    </div>
+                </div>
+
+                <div class="chart-section">
+                    <canvas id="expenseChart"></canvas>
+                </div>
+
+                <div class="mt-20">
+                    <h4 class="text-muted" style="margin-bottom:10px">Riwayat Transaksi</h4>
+                    <div class="table-responsive">
+                        <table id="transaction-table" class="tech-table">
+                            <thead>
+                                <tr>
+                                    <th>Tanggal</th>
+                                    <th>Keterangan</th>
+                                    <th>Nominal</th>
+                                    <th class="no-print">Opsi</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                        <p></p>
+                                            <div class="export-actions no-print" data-html2canvas-ignore="true">
+                        <button onclick="exportJPG()" title="Save JPG" class="btn-danger-icon"><i data-feather="image"></i></button>
+                        <button onclick="window.print()" title="Print PDF" class="btn-danger-icon"><i data-feather="printer"></i></button>
+                    </div>
+                    </div>
+                </div>
+            </div>
+            <div class="glass-panel mt-20 no-print">
+                <h4>INPUT TRANSAKSI</h4>
+                <div class="form-grid">
+                    <div class="input-group">
+                        <select id="type" onchange="updateCategories()">
+                            <option value="expense">Pengeluaran</option>
+                            <option value="income">Pemasukan</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <input type="date" id="date" />
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <input type="number" id="amount" placeholder="Nominal (Rp)" class="modern-input" />
+                   
+                </div>
+                <select id="category" class="modern-input"></select>
+                <input type="text" id="desc" placeholder="Keterangan transaksi..." class="modern-input" />
+                <button onclick="addTransaction()" class="btn-glow full-width">Simpan Data</button>
+                
+                <div class="filter-row mt-20">
+                    <span class="text-muted">Filter:</span>
+                    <div class="date-filter">
+                        <input type="date" id="filter-start" class="mini-input">
+                        <span>-</span>
+                        <input type="date" id="filter-end" class="mini-input">
+                        <button onclick="loadTransactions('custom')" class="btn-danger-icon"><i data-feather="search"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-planning" class="tab-content hidden">
+            <div class="glass-panel">
+                <div class="panel-header">
+                    <h3>Rencana Pengeluaran</h3>
+                </div>
+                <div class="info-box">
+                    <i data-feather="info"></i>
+                    <small>Centang kotak jika barang sudah dibeli. Sistem akan otomatis memindahkannya ke Daftar Pengeluaran.</small>
+                </div>
+
+                <div class="form-grid mt-20">
+                    <input type="text" id="plan-item" placeholder="Nama Barang" class="modern-input" />
+                    <input type="number" id="plan-amount" placeholder="Estimasi Harga" class="modern-input" />
+<select id="plan-category" class="modern-input">
+    </select>
+
+
+                    <button onclick="addPlan()" class="btn-glow">Tambah</button>
+                    
+                </div>
+            </div>
+
+            <div id="planning-list" class="mt-20"></div>
+        </div>
+
+        <div id="view-settings" class="tab-content hidden">
+            <div class="glass-panel">
+                <h3>System Info</h3>
+                <p class="text-muted">FinaFlow v3.0</p>
+                <div class="mt-20">
+                    <label>Developer</label>
+                    <p>xcurrate n khielz</p>
+                </div>
+            </div>
+            
+            <div class="glass-panel mt-20 border-danger">
+                <h4 class="text-danger"><i data-feather="alert-triangle"></i> Danger Zone</h4>
+                <p class="text-muted" style="font-size:0.8rem; margin-bottom:15px">Tindakan ini tidak dapat dibatalkan.</p>
+                
+                <div class="danger-actions">
+                    <button onclick="autoCleanData()" class="btn-outline danger">
+                        Bersihkan Data Lebih dari 30 Hari
+                    </button>
+                    <button onclick="deleteAllData()" class="btn-glow danger">
+                        Hapus Semua
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        
+<footer class="glass-panel mt-20 no-print footer-main">
+    <div class="footer-content">
+        <div class="footer-brand">
+            <i data-feather="hexagon"class="footer-logo"></i>
+            <span>FinaFlow</span>
+        </div>
+        <div class="footer-info">
+            <p>Smart & Futuristic Personal Finance Tracker</p>
+            <small class="text-muted">&copy; 2026 Xcurrate. All Rights Reserved.</small>
+        </div>
+        <div class="footer-links">
+            <a href="https://t.me/zuyaajakali" target="_blank">
+                <i data-feather="send"></i> Telegram
+            </a>
+                        <a href="mailto: mmicqueen@gmail.com"><i data-feather="mail"></i> Support</a>
+        </div>
+    </div>
+</footer>
+
+
+    </main>
+  </section>
+
+  <script src="app.js"></script>
+  <div id="toast-container" class="no-print"></div>
+  
+</body>
+</html>
