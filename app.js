@@ -369,5 +369,15 @@ async function register() {
     const { error } = await sb.auth.signUp({ email: e, password: p });
     if(error) alert(error.message); else alert("Cek Email!");
 }
-async function logout() { await sb.auth.signOut(); location.reload(); }
+async function logout() {
+    // 1. Perintah Supabase untuk mengakhiri sesi di server
+    await sb.auth.signOut(); 
+    
+    // 2. Hapus status login di aplikasi lokal
+    currentUser = null;
+    
+    // 3. Paksa halaman refresh ke kondisi awal (Login Screen)
+    // Ini cara paling ampuh agar semua state JS bersih total
+    window.location.reload(); 
+}
 
