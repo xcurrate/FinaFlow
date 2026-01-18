@@ -344,10 +344,26 @@ async function initApp() {
 
 
 async function login() { 
-    const e = document.getElementById("email").value, p = document.getElementById("password").value;
+    let e = document.getElementById("email").value;
+    const p = document.getElementById("password").value;
+
+    // Cek apakah input adalah username (tanpa @) atau email (dengan @)
+    if (!e.includes("@")) {
+        // Jika username, tambahkan domain "bayangan"
+        e = e.trim().toLowerCase() + "@finaflow.me";
+    }
+
+    // Supabase menerima 'e' yang sudah diproses (tetap berformat email di sistem)
     const { data, error } = await sb.auth.signInWithPassword({ email: e, password: p });
-    if(error) alert(error.message); else { currentUser = data.user; initApp(); }
+    
+    if(error) {
+        alert("Gagal Masuk: Periksa kembali Username/Email dan Sandi.");
+    } else { 
+        currentUser = data.user; 
+        initApp(); 
+    }
 }
+
 async function register() {
     const e = document.getElementById("email").value, p = document.getElementById("password").value;
     const { error } = await sb.auth.signUp({ email: e, password: p });
